@@ -3,6 +3,7 @@
 #include "imgui_impl_opengl3.h"
 #include <stdlib.h>
 #include <vector>
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
 typedef struct {
@@ -30,6 +31,38 @@ void moveStars(std::vector<Coord> &coord, GLfloat m, GLfloat d) {
     }
 }
 
+const char* vertex_shader =
+"#version 400\n"
+"in vec3 coord;"
+"void main() {"
+"  gl_Position = vec4(coord.x, coord.y, -0.1*coord.z, 2.0*coord.z-1.0);"
+"}";
+
+const char* geometry_shader =
+"#version 400\n"
+"layout(points) in;"
+"layout(line_strip, max_vertices = 2) out;"
+"out float vz;"
+"uniform float speed;"
+"void main() {"
+"  gl_Position = gl_in[0].gl_Position;"
+"  vz = gl_Position.z;"
+"  EmitVertex();"
+"  gl_Position = gl_in[0].gl_Position + vec4(0.0, 0.0, 0.1*speed, -2.0*speed);"
+"  vz = gl_Position.z;"
+"  EmitVertex();"
+"  EndPrimitive();"
+"}";
+
+const char* fragment_shader =
+"#version 400\n"
+"in float vz;"
+"out vec4 frag_colour;"
+"void main() {"
+"  float vBright = 1.2-(-10.0*vz)/4.5;"
+"  frag_colour = vec4(vBright, vBright, vBright, 1.0);"
+"}";
+
 int main() {
     if (!glfwInit())
         return 1;
@@ -48,13 +81,53 @@ int main() {
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 400");
 
+    glewInit();
+
+    GLuint vs = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vs, 1, &vertex_shader, NULL);
+    glCompileShader(vs);
+    GLuint gs = glCreateShader(GL_GEOMETRY_SHADER);
+    glShaderSource(gs, 1, &geometry_shader, NULL);
+    glCompileShader(gs);
+    GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fs, 1, &fragment_shader, NULL);
+    glCompileShader(fs);
+    GLuint shader_programme = glCreateProgram();
+    glAttachShader(shader_programme, fs);
+    glAttachShader(shader_programme, vs);
+    glAttachShader(shader_programme, gs);
+    glLinkProgram(shader_programme);
+
+    int n_stars = 8000;
+    const GLfloat d = 10.0f;
+    std::vector<Coord> stars;
+    GLfloat speed = -0.1f;
+
     double then = 0.0;
     while (!glfwWindowShouldClose(window)) {
         double now = glfwGetTime();
         double deltaTime = now - then;
         then = now;
 
+        if (n_stars>stars.size())
+            appendStars(stars, n_stars-stars.size(), 6.0f, d);
+        if (n_stars<stars.size())
+            stars.resize(n_stars);
+        GLuint vbo = 0;
+        glGenBuffers(1, &vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, stars.size()*sizeof(Coord), stars.data(), GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+        glUseProgram(shader_programme);
+        GLint loc_speed = glGetUniformLocation(shader_programme, "speed");
+        glUniform1f(loc_speed, speed);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LEQUAL);
+        glDrawArrays(GL_POINTS, 0, stars.size());
+        glDisableVertexAttribArray(0);
+        moveStars(stars, d, speed*deltaTime/0.2);
         glfwPollEvents();
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
             break;
@@ -62,6 +135,8 @@ int main() {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
         ImGui::Begin("Settings");
+        ImGui::SliderFloat("speed", &speed, -1.0f, 1.0f);
+        ImGui::SliderInt("number of stars", &n_stars, 100, 40000);
         ImGui::Text("deltaTime %.3f (%.1f FPS)", deltaTime, io.Framerate);
         ImGui::End();
         ImGui::Render();
