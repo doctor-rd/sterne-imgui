@@ -1,7 +1,34 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include <stdlib.h>
+#include <vector>
 #include <GLFW/glfw3.h>
+
+typedef struct {
+  GLfloat x;
+  GLfloat y;
+  GLfloat z;
+} Coord;
+
+GLfloat rnd() {
+    return (GLfloat)rand() / (GLfloat)RAND_MAX;
+}
+
+void appendStars(std::vector<Coord> &coord, int n, GLfloat r, GLfloat m) {
+    for (int i=0; i<n; i++)
+        coord.push_back((Coord){r*(2.0f*rnd()-1.0f), r*(2.0f*rnd()-1.0f), m*rnd()});
+}
+
+void moveStars(std::vector<Coord> &coord, GLfloat m, GLfloat d) {
+    for (Coord &c : coord) {
+        c.z+=d;
+        while (c.z>m)
+            c.z-=m;
+        while (c.z<0.0f)
+            c.z+=m;
+    }
+}
 
 int main() {
     if (!glfwInit())
