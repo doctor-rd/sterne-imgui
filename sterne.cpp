@@ -34,32 +34,17 @@ void moveStars(std::vector<Coord> &coord, GLfloat m, GLfloat d) {
 const char* vertex_shader =
 "#version 400\n"
 "in vec3 coord;"
+"out float vBright;"
 "void main() {"
 "  gl_Position = vec4(coord.x, coord.y, -0.1*coord.z, 2.0*coord.z-1.0);"
-"}";
-
-const char* geometry_shader =
-"#version 400\n"
-"layout(points) in;"
-"layout(line_strip, max_vertices = 2) out;"
-"out float vz;"
-"uniform float speed;"
-"void main() {"
-"  gl_Position = gl_in[0].gl_Position;"
-"  vz = gl_Position.z;"
-"  EmitVertex();"
-"  gl_Position = gl_in[0].gl_Position + vec4(0.0, 0.0, 0.1*speed, -2.0*speed);"
-"  vz = gl_Position.z;"
-"  EmitVertex();"
-"  EndPrimitive();"
+"  vBright = 1.2-(coord.z/4.5);"
 "}";
 
 const char* fragment_shader =
 "#version 400\n"
-"in float vz;"
+"in float vBright;"
 "out vec4 frag_colour;"
 "void main() {"
-"  float vBright = 1.2-(-10.0*vz)/4.5;"
 "  frag_colour = vec4(vBright, vBright, vBright, 1.0);"
 "}";
 
@@ -86,16 +71,12 @@ int main() {
     GLuint vs = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vs, 1, &vertex_shader, NULL);
     glCompileShader(vs);
-    GLuint gs = glCreateShader(GL_GEOMETRY_SHADER);
-    glShaderSource(gs, 1, &geometry_shader, NULL);
-    glCompileShader(gs);
     GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fs, 1, &fragment_shader, NULL);
     glCompileShader(fs);
     GLuint shader_programme = glCreateProgram();
     glAttachShader(shader_programme, fs);
     glAttachShader(shader_programme, vs);
-    glAttachShader(shader_programme, gs);
     glLinkProgram(shader_programme);
 
     int n_stars = 8000;
@@ -113,10 +94,18 @@ int main() {
             appendStars(stars, n_stars-stars.size(), 6.0f, d);
         if (n_stars<stars.size())
             stars.resize(n_stars);
+
+        std::vector<Coord> vertices;
+        for (Coord c : stars) {
+            vertices.push_back(c);
+            c.z-=speed;
+            vertices.push_back(c);
+        }
+
         GLuint vbo = 0;
         glGenBuffers(1, &vbo);
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, stars.size()*sizeof(Coord), stars.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(Coord), vertices.data(), GL_STATIC_DRAW);
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
         glUseProgram(shader_programme);
@@ -125,7 +114,7 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LEQUAL);
-        glDrawArrays(GL_POINTS, 0, stars.size());
+        glDrawArrays(GL_LINES, 0, vertices.size());
         glDisableVertexAttribArray(0);
         moveStars(stars, d, speed*deltaTime/0.2);
         glfwPollEvents();
