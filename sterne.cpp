@@ -32,20 +32,19 @@ void moveStars(std::vector<Coord> &coord, GLfloat m, GLfloat d) {
 }
 
 const char* vertex_shader =
-"#version 400\n"
-"in vec3 coord;"
-"out float vBright;"
+"#version 100\n"
+"attribute vec3 coord;"
+"varying lowp float vBright;"
 "void main() {"
 "  gl_Position = vec4(coord.x, coord.y, -0.1*coord.z, 2.0*coord.z-1.0);"
 "  vBright = 1.2-(coord.z/4.5);"
 "}";
 
 const char* fragment_shader =
-"#version 400\n"
-"in float vBright;"
-"out vec4 frag_colour;"
+"#version 100\n"
+"varying lowp float vBright;"
 "void main() {"
-"  frag_colour = vec4(vBright, vBright, vBright, 1.0);"
+"  gl_FragColor = vec4(vBright, vBright, vBright, 1.0);"
 "}";
 
 int main() {
@@ -64,7 +63,7 @@ int main() {
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
     ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 400");
+    ImGui_ImplOpenGL3_Init("#version 100");
 
     glewInit();
 
