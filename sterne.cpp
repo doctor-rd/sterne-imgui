@@ -3,7 +3,7 @@
 #include "imgui_impl_opengl3.h"
 #include <stdlib.h>
 #include <vector>
-#include <GL/glew.h>
+#include <GLES2/gl2.h>
 #include <GLFW/glfw3.h>
 
 typedef struct {
@@ -64,8 +64,6 @@ int main() {
 
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 100");
-
-    glewInit();
 
     GLuint vs = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vs, 1, &vertex_shader, NULL);
