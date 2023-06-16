@@ -1,6 +1,7 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include "imgui/examples/libs/emscripten/emscripten_mainloop_stub.h"
 #include <stdlib.h>
 #include <vector>
 #include <GLES2/gl2.h>
@@ -83,7 +84,12 @@ int main() {
     GLfloat speed = -0.1f;
 
     double then = 0.0;
-    while (!glfwWindowShouldClose(window)) {
+#ifdef __EMSCRIPTEN__
+    EMSCRIPTEN_MAINLOOP_BEGIN
+#else
+    while (!glfwWindowShouldClose(window))
+#endif
+    {
         double now = glfwGetTime();
         double deltaTime = now - then;
         then = now;
@@ -117,7 +123,11 @@ int main() {
         moveStars(stars, d, speed*deltaTime/0.2);
         glfwPollEvents();
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+#ifdef __EMSCRIPTEN__
+            emscripten_cancel_main_loop();
+#else
             break;
+#endif
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
@@ -130,6 +140,9 @@ int main() {
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         glfwSwapBuffers(window);
     }
+#ifdef __EMSCRIPTEN__
+    EMSCRIPTEN_MAINLOOP_END;
+#endif
 
     glfwTerminate();
     return 0;
