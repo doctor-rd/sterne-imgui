@@ -2,6 +2,7 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include <stdlib.h>
+#include <fstream>
 #include <vector>
 #include <GLES2/gl2.h>
 #include <GLFW/glfw3.h>
@@ -31,6 +32,44 @@ void moveStars(std::vector<Coord> &coord, GLfloat m, GLfloat d) {
     }
 }
 
+const int width = 640;
+const int height = 480;
+
+struct bmp_header_t {
+    unsigned short bfType;
+    unsigned int bfSize;
+    unsigned int bfReserved;
+    unsigned int bfOffBits;
+} __attribute__((packed)) bmp_header = {0x4D42, 0, 0, 54};
+
+struct bmp_info_t {
+    unsigned int biSize;
+    int biWidth;
+    int biHeight;
+    unsigned short biPlanes;
+    unsigned short biBitCount;
+    unsigned int biCompression;
+    unsigned int biSizeImage;
+    int biXPelsPerMeter;
+    int biYPelsPerMeter;
+    unsigned int biClrUsed;
+    unsigned int biClrImportant;
+} __attribute__((packed)) bmp_info = {40, width, height, 1, 24, 0, 0, 0, 0, 0, 0};
+
+struct {
+    bmp_header_t bmp_header;
+    bmp_info_t bmp_info;
+} __attribute__((packed)) bmp_headers = {bmp_header, bmp_info};
+
+void take_screenshot(char *filename) {
+    char buffer[width*height*3];
+    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, buffer);
+    auto bmpfile = std::fstream(filename, std::ios::out | std::ios::binary);
+    bmpfile.write(((const char*) &bmp_headers), sizeof(bmp_headers));
+    bmpfile.write(buffer, sizeof(buffer));
+    bmpfile.close();
+}
+
 const char* vertex_shader =
 "#version 100\n"
 "attribute vec3 coord;"
@@ -50,7 +89,7 @@ const char* fragment_shader =
 int main() {
     if (!glfwInit())
         return 1;
-    GLFWwindow* window = glfwCreateWindow(640, 480, "Sterne", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(width, height, "Sterne", NULL, NULL);
     if (!window) {
         glfwTerminate();
         return 1;
@@ -80,6 +119,7 @@ int main() {
     const GLfloat d = 10.0f;
     std::vector<Coord> stars;
     GLfloat speed = -0.1f;
+    char screenshot_filename[256] = "screenshot.bmp";
 
     double then = 0.0;
     while (!glfwWindowShouldClose(window)) {
@@ -123,6 +163,9 @@ int main() {
         ImGui::Begin("Settings");
         ImGui::SliderFloat("speed", &speed, -1.0f, 1.0f);
         ImGui::SliderInt("number of stars", &n_stars, 100, 40000);
+        ImGui::InputText("Screenshot filename", screenshot_filename, sizeof(screenshot_filename));
+        if (ImGui::Button("Screenshot"))
+            take_screenshot(screenshot_filename);
         ImGui::Text("deltaTime %.3f (%.1f FPS)", deltaTime, io.Framerate);
         ImGui::End();
         ImGui::Render();
