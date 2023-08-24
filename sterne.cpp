@@ -2,6 +2,7 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include <stdlib.h>
+#include <string.h>
 #include <vector>
 #include <GLES2/gl2.h>
 #include <GLFW/glfw3.h>
@@ -34,6 +35,26 @@ void moveStars(std::vector<Coord> &coord, GLfloat m, GLfloat d) {
     }
 }
 
+const int width = 640;
+const int height = 480;
+
+void store_frame(AVFrame *frame) {
+    GLfloat r[width*height];
+    GLfloat g[width*height];
+    GLfloat b[width*height];
+    glReadPixels(0, 0, width, height, GL_RED, GL_FLOAT, r);
+    glReadPixels(0, 0, width, height, GL_RED, GL_FLOAT, g);
+    glReadPixels(0, 0, width, height, GL_RED, GL_FLOAT, b);
+    for (int y=0; y<height; y++) {
+        for (int x=0; x<width; x++) {
+            int p = (height-y)*width+x;
+            frame->data[0][y*width+x] = (r[p]*255.f + g[p]*255.f + b[p]*255.f)/3.f;
+        }
+    }
+    memset(frame->data[1], 127, width*height/4);
+    memset(frame->data[2], 127, width*height/4);
+}
+
 const char* vertex_shader =
 "#version 100\n"
 "attribute vec3 coord;"
@@ -53,7 +74,7 @@ const char* fragment_shader =
 int main() {
     if (!glfwInit())
         return 1;
-    GLFWwindow* window = glfwCreateWindow(640, 480, "Sterne", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(width, height, "Sterne", NULL, NULL);
     if (!window) {
         glfwTerminate();
         return 1;
