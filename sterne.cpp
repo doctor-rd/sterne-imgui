@@ -1,8 +1,10 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <fstream>
 #include <vector>
 #include <GLES2/gl2.h>
 #include <GLFW/glfw3.h>
@@ -53,6 +55,23 @@ void store_frame(AVFrame *frame) {
     }
     memset(frame->data[1], 127, width*height/4);
     memset(frame->data[2], 127, width*height/4);
+}
+
+void write_packets(AVCodecContext *ctx, std::fstream &f) {
+    AVPacket pkt;
+    av_init_packet(&pkt);
+    while (1) {
+        int ret = avcodec_receive_packet(ctx, &pkt);
+        if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
+            return;
+        else if (ret < 0) {
+            fprintf(stderr, "Error during encoding\n");
+            exit(1);
+        }
+        printf("Write packet %3"PRId64" (size=%5d)\n", pkt.pts, pkt.size);
+        f.write((const char*)pkt.data, pkt.size);
+        av_packet_unref(&pkt);
+    }
 }
 
 const char* vertex_shader =
