@@ -74,6 +74,17 @@ void write_packets(AVCodecContext *ctx, std::fstream &f) {
     }
 }
 
+void encode_screenshot(AVCodecContext *ctx, AVFrame *frame) {
+    int ret;
+    ret = av_frame_make_writable(frame);
+    if (ret < 0) exit(1);
+    store_frame(frame);
+    printf("Send frame %3"PRId64"\n", frame->pts);
+    ret = avcodec_send_frame(ctx, frame);
+    if (ret < 0) exit(1);
+    frame->pts++;
+}
+
 const char* vertex_shader =
 "#version 100\n"
 "attribute vec3 coord;"
