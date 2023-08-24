@@ -135,13 +135,26 @@ int main() {
     std::vector<Coord> stars;
     GLfloat speed = -0.1f;
 
+    char video_filename[256] = "record.mp4";
+    bool record_video = false;
+    std::fstream video_file;
     const AVCodec *codec = avcodec_find_encoder(AV_CODEC_ID_H264);
+    if (!codec) return 1;
+    AVCodecContext *ctx = avcodec_alloc_context3(codec);
+    if (!ctx) return 1;
+    ctx->time_base = (AVRational){1, 24};
+    ctx->framerate = (AVRational){24, 1};
 
     double then = 0.0;
     while (!glfwWindowShouldClose(window)) {
         double now = glfwGetTime();
         double deltaTime = now - then;
         then = now;
+        if (record_video) {
+            deltaTime = (double) ctx->time_base.num/(double) ctx->time_base.den;
+            if (!video_file.is_open())
+                video_file.open(video_filename, std::ios::out | std::ios::binary);
+        }
 
         if (n_stars>stars.size())
             appendStars(stars, n_stars-stars.size(), 6.0f, d);
@@ -179,6 +192,8 @@ int main() {
         ImGui::Begin("Settings");
         ImGui::SliderFloat("speed", &speed, -1.0f, 1.0f);
         ImGui::SliderInt("number of stars", &n_stars, 100, 40000);
+        ImGui::InputText("video filename", video_filename, sizeof(video_filename), video_file.is_open() ? ImGuiInputTextFlags_ReadOnly : 0);
+        ImGui::Checkbox("record video", &record_video);
         ImGui::Text("deltaTime %.3f (%.1f FPS)", deltaTime, io.Framerate);
         ImGui::End();
         ImGui::Render();
@@ -186,6 +201,7 @@ int main() {
         glfwSwapBuffers(window);
     }
 
+    video_file.close();
     glfwTerminate();
     return 0;
 }
