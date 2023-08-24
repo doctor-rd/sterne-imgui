@@ -5,6 +5,9 @@
 #include <vector>
 #include <GLES2/gl2.h>
 #include <GLFW/glfw3.h>
+extern "C" {
+#include <libavcodec/avcodec.h>
+}
 
 typedef struct {
   GLfloat x;
@@ -80,6 +83,8 @@ int main() {
     const GLfloat d = 10.0f;
     std::vector<Coord> stars;
     GLfloat speed = -0.1f;
+
+    const AVCodec *codec = avcodec_find_encoder(AV_CODEC_ID_H264);
 
     double then = 0.0;
     while (!glfwWindowShouldClose(window)) {
