@@ -6,3 +6,6 @@ Sterne
 `$ cd sterne-imgui`\
 `$ make`\
 `$ ./sterne`
+
+#### Video as MP4
+`$ ffmpeg -i record.mp4 -c:v copy video.mp4`
