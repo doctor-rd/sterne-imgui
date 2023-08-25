@@ -210,6 +210,7 @@ int main() {
         ImGui::SliderInt("number of stars", &n_stars, 100, 40000);
         ImGui::InputText("video filename", video_filename, sizeof(video_filename), video_file.is_open() ? ImGuiInputTextFlags_ReadOnly : 0);
         ImGui::Checkbox("record video", &record_video);
+        ImGui::Text("%ld frames recorded", frame->pts);
         ImGui::Text("deltaTime %.3f (%.1f FPS)", deltaTime, io.Framerate);
         ImGui::End();
         ImGui::Render();
