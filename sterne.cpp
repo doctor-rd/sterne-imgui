@@ -142,8 +142,20 @@ int main() {
     if (!codec) return 1;
     AVCodecContext *ctx = avcodec_alloc_context3(codec);
     if (!ctx) return 1;
+    ctx->bit_rate = 3000000;
+    ctx->width = width;
+    ctx->height = height;
     ctx->time_base = (AVRational){1, 24};
     ctx->framerate = (AVRational){24, 1};
+    ctx->pix_fmt = AV_PIX_FMT_YUV420P;
+    if (avcodec_open2(ctx, codec, NULL) < 0) return 1;
+    AVFrame *frame = av_frame_alloc();
+    if (!frame) return 1;
+    frame->format = ctx->pix_fmt;
+    frame->width  = ctx->width;
+    frame->height = ctx->height;
+    frame->pts = 0;
+    if (av_frame_get_buffer(frame, 0) < 0) return 1;
 
     double then = 0.0;
     while (!glfwWindowShouldClose(window)) {
@@ -183,6 +195,10 @@ int main() {
         glDrawArrays(GL_LINES, 0, vertices.size());
         glDisableVertexAttribArray(0);
         moveStars(stars, d, speed*deltaTime/0.2);
+        if (record_video) {
+            encode_screenshot(ctx, frame);
+            write_packets(ctx, video_file);
+        }
         glfwPollEvents();
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
             break;
@@ -201,6 +217,10 @@ int main() {
         glfwSwapBuffers(window);
     }
 
+    if (video_file.is_open()) {
+        avcodec_send_frame(ctx, NULL);
+        write_packets(ctx, video_file);
+    }
     video_file.close();
     glfwTerminate();
     return 0;
