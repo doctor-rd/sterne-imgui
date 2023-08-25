@@ -41,16 +41,12 @@ const int width = 640;
 const int height = 480;
 
 void store_frame(AVFrame *frame) {
-    GLfloat r[width*height];
-    GLfloat g[width*height];
-    GLfloat b[width*height];
-    glReadPixels(0, 0, width, height, GL_RED, GL_FLOAT, r);
-    glReadPixels(0, 0, width, height, GL_RED, GL_FLOAT, g);
-    glReadPixels(0, 0, width, height, GL_RED, GL_FLOAT, b);
+    GLfloat rgb[width*height*3];
+    glReadPixels(0, 0, width, height, GL_RGB, GL_FLOAT, rgb);
     for (int y=0; y<height; y++) {
         for (int x=0; x<width; x++) {
-            int p = (height-y)*width+x;
-            frame->data[0][y*width+x] = (r[p]*255.f + g[p]*255.f + b[p]*255.f)/3.f;
+            int p = ((height-1-y)*width+x)*3;
+            frame->data[0][y*width+x] = (rgb[p]*255.f + rgb[p+1]*255.f + rgb[p+2]*255.f)/3.f;
         }
     }
     memset(frame->data[1], 127, width*height/4);
