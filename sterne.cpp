@@ -89,6 +89,10 @@ const char* fragment_shader =
 int main() {
     if (!glfwInit())
         return 1;
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
     GLFWwindow* window = glfwCreateWindow(width, height, "Sterne", NULL, NULL);
     if (!window) {
         glfwTerminate();
