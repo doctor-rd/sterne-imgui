@@ -2,7 +2,7 @@
 Sterne
 
 #### Building
-`$ git clone --recurse-submodules https://github.com/doctor-rd/sterne-imgui.git`\
+`$ git clone --recurse-submodules -b glsl4 https://github.com/doctor-rd/sterne-imgui.git`\
 `$ cd sterne-imgui`\
 `$ make`\
 `$ ./sterne`
