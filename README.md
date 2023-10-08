@@ -2,7 +2,7 @@
 [Sterne](https://doctor-rd.github.io/sterne-imgui/)
 
 #### Building
-`$ git clone --recurse-submodules -b wasm https://github.com/doctor-rd/sterne-imgui.git`\
+`$ git clone --recurse-submodules https://github.com/doctor-rd/sterne-imgui.git`\
 `$ cd sterne-imgui`
 
 ###### For your local machine
